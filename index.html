@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>ClickSaber - Stable v1</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#f5f7fa;
+    padding:30px;
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.15);
+}
+
+h1{
+    color:#1f2937;
+}
+
+button{
+    padding:12px 20px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    color:white;
+    font-weight:bold;
+}
+
+.processar{
+    background:#2563eb;
+}
+
+.download{
+    background:#059669;
+}
+
+.download2{
+    background:#7c3aed;
+}
+
+.info{
+    margin-top:20px;
+    padding:15px;
+    background:#eef2ff;
+    border-radius:8px;
+}
+
+.botoes{
+    margin-top:20px;
+}
+
+.botoes button{
+    margin-right:10px;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+    <h1>ClickSaber - Stable v1</h1>
+
+    <p>
+        Selecione o CSV recebido pelo time.
+    </p>
+
+    <input type="file" id="arquivo" accept=".csv">
+
+    <br><br>
+
+    <button class="processar" onclick="processar()">
+        Processar Arquivo
+    </button>
+
+    <div id="status" class="info" style="display:none"></div>
+
+    <div class="botoes" id="downloads" style="display:none">
+
+        <button class="download"
+            onclick="baixarCadastro()">
+            Baixar Cadastro
+        </button>
+
+        <button class="download2"
+            onclick="baixarPersonalizacao()">
+            Baixar Personalização
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+
+let cadastroCSV = "";
+let personalizacaoCSV = "";
+
+const MAPEAMENTO = {
+    "Educação Infantil": [13,14,21,22,23],
+    "Ensino Fundamental 1": [1,11,3,5,6],
+    "Ensino Fundamental 2": [7,8,9,10],
+    "Ensino Médio": [2,12,4]
+};
+
+function status(msg){
+    const div = document.getElementById("status");
+    div.style.display = "block";
+    div.innerHTML = msg;
+}
+
+function baixar(nome,conteudo){
+
+    const blob = new Blob(
+    	[conteudo],
+    	{type:"text/csv"}
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = nome;
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+}
+
+function baixarCadastro(){
+    baixar("Cadastro_Aplicacao.csv", cadastroCSV);
+}
+
+function baixarPersonalizacao(){
+    baixar("Personalizacao_ClickSaber.csv", personalizacaoCSV);
+}
+
+function processar(){
+
+    const arquivo =
+        document.getElementById("arquivo").files[0];
+
+    if(!arquivo){
+        alert("Selecione um arquivo.");
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(e){
+
+        try{
+
+            const texto = e.target.result;
+
+            const linhas = texto
+                .split(/\r?\n/)
+                .filter(x => x.trim() !== "");
+
+            const header = linhas[0]
+                .split(";")
+                .map(x => x.replaceAll('"',""));
+
+            const idx = {};
+
+            header.forEach((col,i)=>{
+                idx[col] = i;
+            });
+
+            const segmentoColuna =
+                Object.keys(idx)
+                .find(x => x.includes("ClickSaber"));
+
+            const cadastroHeader = [
+                "CODIGO_ESCOLA",
+                "NOME_ESCOLA",
+                "CNPJ",
+                "ENDERECO",
+                "COMPLEMENTO",
+                "BAIRRO",
+                "NOME_MUNICIPIO",
+                "ESTADO",
+                "CODIGO_AGRUPAMENTO",
+                "NOME_AGRUPAMENTO",
+                "TIPO_AGRUPAMENTO",
+                "ID_AGRUPAMENTO_PAI",
+                "ID_APLICACAO_USUARIO",
+                "ESCOLA_NAO_GERENCIAVEL",
+                "PERMITE_RESPONSAVEL",
+                "ORIUNDO_INTEGRACAO",
+                "HABILITAR_MATERIAL_MANUALMENTE_NAS_TURMAS"
+            ];
+
+            const cadastro = [];
+            cadastro.push(cadastroHeader.join(";"));
+
+            const personalizacao = [];
+
+            personalizacao.push(
+                [
+                    "anoAdocao",
+                    "idPessoaJuridica",
+                    "idNivelEnsinoIndicacao",
+                    "idColecao",
+                    "sku",
+                    "idServico",
+                    "idTipoAdocao"
+                ].join(";")
+            );
+
+            let escolas = 0;
+
+            for(let i=2;i<linhas.length;i++){
+
+                const row = linhas[i].split(";");
+
+                if(row.length < 13)
+                    continue;
+
+                escolas++;
+
+                const codigo =
+                    String(row[idx["CODIGO_ESCOLA"]] || "")
+                    .padStart(14,"0");
+
+                cadastro.push([
+                    '="' + String(codigo).padStart(14,"0") + '"',
+                    row[idx["NOME_ESCOLA"]] || "",
+                    '="' +
+                    String(
+                    	row[idx["CNPJ"]] || ""
+                    ).padStart(14,"0")
+                    + '"',
+                    row[idx["ENDERECO"]] || "",
+                    row[idx["COMPLEMENTO"]] || "",
+                    row[idx["BAIRRO"]] || "",
+                    row[idx["NOME_MUNICIPIO"]] || "",
+                    row[idx["ESTADO"]] || "",
+                    row[idx["CODIGO_AGRUPAMENTO"]] || "",
+                    row[idx["NOME_AGRUPAMENTO"]] || "",
+                    row[idx["TIPO_AGRUPAMENTO"]] || "",
+                    "",
+                    "360",
+                    "0",
+                    "0",
+                    "1",
+                    "0"
+                ].join(";"));
+
+                const idPessoa =
+                    row[idx["ID_PESSOA_JURIDICA"]];
+
+                const segmentos =
+                    row[idx[segmentoColuna]]
+                    .split("|")
+                    .map(x => x.trim());
+
+                const controle = new Set();
+
+                segmentos.forEach(seg=>{
+
+                    const niveis = MAPEAMENTO[seg];
+
+                    if(!niveis){
+                        throw new Error(
+                            "Segmento desconhecido: " + seg
+                        );
+                    }
+
+                    niveis.forEach(nivel=>{
+
+                        const chave =
+                            idPessoa + "_" + nivel;
+
+                        if(controle.has(chave))
+                            return;
+
+                        controle.add(chave);
+
+                        personalizacao.push([
+                            "2026",
+                            idPessoa,
+                            nivel,
+                            "",
+                            "",
+                            "100",
+                            "6"
+                        ].join(";"));
+
+                    });
+
+                });
+
+            }
+
+            cadastroCSV =
+                cadastro.join("\n");
+
+            personalizacaoCSV =
+                personalizacao.join("\n");
+
+            document
+                .getElementById("downloads")
+                .style.display = "block";
+
+            status(
+                "<b>Processamento concluído</b><br>" +
+                "Escolas processadas: " + escolas + "<br>" +
+                "Linhas cadastro: " + (cadastro.length-1) + "<br>" +
+                "Linhas personalização: " + (personalizacao.length-1)
+            );
+
+        }
+        catch(ex){
+
+            status(
+                "<span style='color:red'>"+
+                ex.message+
+                "</span>"
+            );
+
+        }
+
+    };
+
+    reader.readAsText(
+        arquivo,
+        "ISO-8859-1"
+    );
+
+}
+
+</script>
+
+</body>
+</html>
