@@ -1,10 +1,15 @@
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
+
 <meta charset="UTF-8">
-<title>ClickSaber - Stable v1</title>
+
+<title>ClickSaber - Stable v1.3</title>
 
 <style>
+
 body{
     font-family: Arial, sans-serif;
     background:#f5f7fa;
@@ -59,38 +64,59 @@ button{
 .botoes button{
     margin-right:10px;
 }
+
 </style>
 
 </head>
+
 <body>
 
 <div class="container">
 
-    <h1>ClickSaber - Stable v1</h1>
+    <h1>ClickSaber - Stable v1.3</h1>
 
     <p>
         Selecione o CSV recebido pelo time.
     </p>
 
-    <input type="file" id="arquivo" accept=".csv">
+    <input
+        type="file"
+        id="arquivo"
+        accept=".csv"
+    >
 
     <br><br>
 
-    <button class="processar" onclick="processar()">
+    <button
+        class="processar"
+        onclick="processar()"
+    >
         Processar Arquivo
     </button>
 
-    <div id="status" class="info" style="display:none"></div>
+    <div
+        id="status"
+        class="info"
+        style="display:none"
+    ></div>
 
-    <div class="botoes" id="downloads" style="display:none">
+    <div
+        class="botoes"
+        id="downloads"
+        style="display:none"
+    >
 
-        <button class="download"
-            onclick="baixarCadastro()">
+        <button
+            class="download"
+            onclick="baixarCadastro()"
+        >
             Baixar Cadastro
         </button>
 
-        <button class="download2"
-            onclick="baixarPersonalizacao()">
+        <button
+            class="download2"
+            onclick="baixarPersonalizacao()"
+        >
             Baixar Personalização
         </button>
 
@@ -98,90 +124,502 @@ button{
 
 </div>
 
+
 <script>
 
+
 let cadastroCSV = "";
+
 let personalizacaoCSV = "";
 
+
+/*
+ * ==========================================================
+ * MAPEAMENTO DOS SEGMENTOS
+ * ==========================================================
+ */
+
 const MAPEAMENTO = {
-    "Educação Infantil": [13,14,21,22,23],
-    "Ensino Fundamental 1": [1,11,3,5,6],
-    "Ensino Fundamental 2": [7,8,9,10],
-    "Ensino Médio": [2,12,4]
+
+    "Educação Infantil": [
+        13,
+        14,
+        21,
+        22,
+        23
+    ],
+
+    "Ensino Fundamental 1": [
+        1,
+        11,
+        3,
+        5,
+        6
+    ],
+
+    "Ensino Fundamental 2": [
+        7,
+        8,
+        9,
+        10
+    ],
+
+    "Ensino Médio": [
+        2,
+        12,
+        4
+    ]
+
 };
 
+
+/*
+ * ==========================================================
+ * IDs QUE NÃO PODEM SER GERADOS
+ * ==========================================================
+ */
+
+const IDS_EXCLUIDOS = [
+
+    17,
+    18,
+    37,
+    38,
+    39,
+    40,
+    41,
+    43,
+    47,
+    48
+
+];
+
+
+/*
+ * ==========================================================
+ * EXIBIÇÃO DO STATUS
+ * ==========================================================
+ */
+
 function status(msg){
-    const div = document.getElementById("status");
+
+    const div =
+        document.getElementById("status");
+
     div.style.display = "block";
+
     div.innerHTML = msg;
+
 }
 
-function baixar(nome,conteudo){
+
+/*
+ * ==========================================================
+ * TRATAMENTO DE CSV
+ * ==========================================================
+ *
+ * Quando necessário, coloca o valor entre aspas.
+ *
+ * Exemplo:
+ *
+ * 00095105000000
+ *
+ * será exportado como:
+ *
+ * "00095105000000"
+ *
+ * Não utilizamos:
+ *
+ * ="00095105000000"
+ *
+ * porque isso transforma o conteúdo em fórmula do Excel.
+ */
+
+function escaparCSV(valor){
+
+    const texto =
+        String(valor ?? "");
+
+    if(
+        texto.includes(";") ||
+        texto.includes('"') ||
+        texto.includes("\n") ||
+        texto.includes("\r")
+    ){
+
+        return '"' +
+            texto.replace(/"/g, '""') +
+            '"';
+
+    }
+
+    /*
+     * Para CODIGO_ESCOLA e CNPJ,
+     * o valor já possui 14 dígitos.
+     */
+    return texto;
+
+}
+
+
+/*
+ * ==========================================================
+ * DOWNLOAD
+ * ==========================================================
+ */
+
+function baixar(nome, conteudo){
 
     const blob = new Blob(
-    	[conteudo],
-    	{type:"text/csv"}
+
+        [conteudo],
+
+        {
+            type:"text/csv;charset=ISO-8859-1"
+        }
+
     );
 
-    const url = URL.createObjectURL(blob);
+    const url =
+        URL.createObjectURL(blob);
 
-    const a = document.createElement("a");
+    const a =
+        document.createElement("a");
 
     a.href = url;
+
     a.download = nome;
 
     document.body.appendChild(a);
+
     a.click();
+
     document.body.removeChild(a);
 
     URL.revokeObjectURL(url);
+
 }
+
 
 function baixarCadastro(){
-    baixar("Cadastro_Aplicacao.csv", cadastroCSV);
+
+    baixar(
+        "Cadastro_Aplicacao.csv",
+        cadastroCSV
+    );
+
 }
 
+
 function baixarPersonalizacao(){
-    baixar("Personalizacao_ClickSaber.csv", personalizacaoCSV);
+
+    baixar(
+        "Personalizacao_ClickSaber.csv",
+        personalizacaoCSV
+    );
+
 }
+
+
+/*
+ * ==========================================================
+ * NORMALIZAÇÃO DE CODIGO_ESCOLA E CNPJ
+ * ==========================================================
+ *
+ * ESTA É A PRINCIPAL ALTERAÇÃO DA VERSÃO v1.3
+ *
+ * Regras:
+ *
+ * 1. Remove tudo que não for número.
+ *
+ * 2. Se estiver vazio -> erro.
+ *
+ * 3. Se tiver mais de 14 dígitos -> erro.
+ *
+ * 4. Se tiver menos de 14 -> completa com zeros
+ *    à esquerda.
+ *
+ * 5. Retorna sempre exatamente 14 dígitos.
+ *
+ * Exemplos:
+ *
+ * 95105000000
+ * -> 00095105000000
+ *
+ * 00095105000000
+ * -> 00095105000000
+ *
+ * 123456789012345
+ * -> ERRO
+ */
+
+function normalizarDocumento(
+    valor,
+    campo,
+    linha
+){
+
+    /*
+     * Remove pontos, barras, espaços,
+     * hífens e qualquer outro caractere.
+     */
+    const somenteNumeros =
+        String(valor || "")
+        .replace(/\D/g, "");
+
+
+    /*
+     * Não permite campo vazio.
+     */
+    if(!somenteNumeros){
+
+        throw new Error(
+
+            "Linha " +
+            linha +
+            ": " +
+            campo +
+            " não informado."
+
+        );
+
+    }
+
+
+    /*
+     * NÃO aceita mais de 14 dígitos.
+     *
+     * Essa validação acontece ANTES
+     * do padStart.
+     */
+    if(somenteNumeros.length > 14){
+
+        throw new Error(
+
+            "Linha " +
+            linha +
+            ": " +
+            campo +
+            " inválido. " +
+            "O valor possui " +
+            somenteNumeros.length +
+            " dígitos, mas deve possuir exatamente 14."
+
+        );
+
+    }
+
+
+    /*
+     * Completa com zeros à esquerda
+     * até chegar a 14 dígitos.
+     */
+    const normalizado =
+        somenteNumeros.padStart(
+            14,
+            "0"
+        );
+
+
+    /*
+     * Garantia final.
+     */
+    if(normalizado.length !== 14){
+
+        throw new Error(
+
+            "Linha " +
+            linha +
+            ": " +
+            campo +
+            " inválido. " +
+            "O valor final deve possuir exatamente 14 dígitos."
+
+        );
+
+    }
+
+
+    return normalizado;
+
+}
+
+
+/*
+ * ==========================================================
+ * PROCESSAMENTO
+ * ==========================================================
+ */
 
 function processar(){
 
     const arquivo =
-        document.getElementById("arquivo").files[0];
+        document
+        .getElementById("arquivo")
+        .files[0];
+
 
     if(!arquivo){
-        alert("Selecione um arquivo.");
+
+        alert(
+            "Selecione um arquivo."
+        );
+
         return;
+
     }
 
-    const reader = new FileReader();
+
+    /*
+     * Esconde os downloads enquanto
+     * um novo processamento é realizado.
+     */
+
+    document
+        .getElementById("downloads")
+        .style.display = "none";
+
+
+    cadastroCSV = "";
+
+    personalizacaoCSV = "";
+
+
+    const reader =
+        new FileReader();
+
 
     reader.onload = function(e){
 
         try{
 
-            const texto = e.target.result;
+            const texto =
+                e.target.result;
 
-            const linhas = texto
+
+            const linhas =
+                texto
                 .split(/\r?\n/)
-                .filter(x => x.trim() !== "");
+                .filter(
+                    x => x.trim() !== ""
+                );
 
-            const header = linhas[0]
+
+            if(linhas.length < 2){
+
+                throw new Error(
+
+                    "O arquivo não possui dados para processamento."
+
+                );
+
+            }
+
+
+            /*
+             * Lê o cabeçalho.
+             */
+
+            const header =
+                linhas[0]
                 .split(";")
-                .map(x => x.replaceAll('"',""));
+                .map(x =>
+
+                    x
+                    .replaceAll('"',"")
+                    .trim()
+
+                );
+
+
+            /*
+             * Cria índice das colunas.
+             */
 
             const idx = {};
 
+
             header.forEach((col,i)=>{
+
                 idx[col] = i;
+
             });
+
+
+            /*
+             * Localiza a coluna de segmentos.
+             */
 
             const segmentoColuna =
                 Object.keys(idx)
-                .find(x => x.includes("ClickSaber"));
+                .find(
+                    x =>
+                        x.includes("ClickSaber")
+                );
+
+
+            if(!segmentoColuna){
+
+                throw new Error(
+
+                    'Coluna de segmentos contendo "ClickSaber" não encontrada.'
+
+                );
+
+            }
+
+
+            /*
+             * Colunas obrigatórias.
+             */
+
+            const colunasObrigatorias = [
+
+                "CODIGO_ESCOLA",
+                "NOME_ESCOLA",
+                "CNPJ",
+                "ENDERECO",
+                "COMPLEMENTO",
+                "BAIRRO",
+                "NOME_MUNICIPIO",
+                "ESTADO",
+                "CODIGO_AGRUPAMENTO",
+                "NOME_AGRUPAMENTO",
+                "TIPO_AGRUPAMENTO",
+                "ID_PESSOA_JURIDICA"
+
+            ];
+
+
+            const colunasAusentes =
+                colunasObrigatorias.filter(
+
+                    coluna =>
+                        idx[coluna] === undefined
+
+                );
+
+
+            if(colunasAusentes.length > 0){
+
+                throw new Error(
+
+                    "Colunas obrigatórias não encontradas: " +
+                    colunasAusentes.join(", ")
+
+                );
+
+            }
+
+
+            /*
+             * ==================================================
+             * CABEÇALHO DO CADASTRO
+             * ==================================================
+             */
 
             const cadastroHeader = [
+
                 "CODIGO_ESCOLA",
                 "NOME_ESCOLA",
                 "CNPJ",
@@ -199,15 +637,35 @@ function processar(){
                 "PERMITE_RESPONSAVEL",
                 "ORIUNDO_INTEGRACAO",
                 "HABILITAR_MATERIAL_MANUALMENTE_NAS_TURMAS"
+
             ];
 
+
             const cadastro = [];
-            cadastro.push(cadastroHeader.join(";"));
+
+
+            cadastro.push(
+
+                cadastroHeader
+                .map(escaparCSV)
+                .join(";")
+
+            );
+
+
+            /*
+             * ==================================================
+             * CABEÇALHO DA PERSONALIZAÇÃO
+             * ==================================================
+             */
 
             const personalizacao = [];
 
+
             personalizacao.push(
+
                 [
+
                     "anoAdocao",
                     "idPessoaJuridica",
                     "idNivelEnsinoIndicacao",
@@ -215,87 +673,350 @@ function processar(){
                     "sku",
                     "idServico",
                     "idTipoAdocao"
-                ].join(";")
+
+                ]
+                .map(escaparCSV)
+                .join(";")
+
             );
+
 
             let escolas = 0;
 
-            for(let i=2;i<linhas.length;i++){
 
-                const row = linhas[i].split(";");
+            /*
+             * ==================================================
+             * CONTROLE GLOBAL DE DUPLICIDADE
+             * ==================================================
+             *
+             * A combinação:
+             *
+             * idPessoaJuridica + idNivelEnsinoIndicacao
+             *
+             * só pode aparecer uma vez.
+             */
+
+            const personalizacoesGeradas =
+                new Set();
+
+
+            /*
+             * ==================================================
+             * PROCESSA CADA ESCOLA
+             * ==================================================
+             */
+
+            for(
+                let i = 2;
+                i < linhas.length;
+                i++
+            ){
+
+                const row =
+                    linhas[i].split(";");
+
+
+                /*
+                 * Ignora linhas inválidas.
+                 */
 
                 if(row.length < 13)
                     continue;
 
+
+                const numeroLinha =
+                    i + 1;
+
+
                 escolas++;
 
-                const codigo =
-                    String(row[idx["CODIGO_ESCOLA"]] || "")
-                    .padStart(14,"0");
 
-                cadastro.push([
-                    '="' + String(codigo).padStart(14,"0") + '"',
-                    row[idx["NOME_ESCOLA"]] || "",
-                    '="' +
-                    String(
-                    	row[idx["CNPJ"]] || ""
-                    ).padStart(14,"0")
-                    + '"',
-                    row[idx["ENDERECO"]] || "",
-                    row[idx["COMPLEMENTO"]] || "",
-                    row[idx["BAIRRO"]] || "",
-                    row[idx["NOME_MUNICIPIO"]] || "",
-                    row[idx["ESTADO"]] || "",
-                    row[idx["CODIGO_AGRUPAMENTO"]] || "",
-                    row[idx["NOME_AGRUPAMENTO"]] || "",
-                    row[idx["TIPO_AGRUPAMENTO"]] || "",
-                    "",
-                    "360",
-                    "0",
-                    "0",
-                    "1",
-                    "0"
-                ].join(";"));
+                /*
+                 * ==================================================
+                 * CODIGO_ESCOLA
+                 * ==================================================
+                 *
+                 * Sempre exatamente 14 dígitos.
+                 */
+
+                const codigo =
+                    normalizarDocumento(
+
+                        row[
+                            idx["CODIGO_ESCOLA"]
+                        ],
+
+                        "CODIGO_ESCOLA",
+
+                        numeroLinha
+
+                    );
+
+
+                /*
+                 * ==================================================
+                 * CNPJ
+                 * ==================================================
+                 *
+                 * Sempre exatamente 14 dígitos.
+                 */
+
+                const cnpj =
+                    normalizarDocumento(
+
+                        row[
+                            idx["CNPJ"]
+                        ],
+
+                        "CNPJ",
+
+                        numeroLinha
+
+                    );
+
+
+                /*
+                 * ==================================================
+                 * CADASTRO DA APLICAÇÃO
+                 * ==================================================
+                 */
+
+                cadastro.push(
+
+                    [
+
+                        /*
+                         * Os valores normalizados
+                         * já possuem exatamente 14 dígitos.
+                         */
+
+                        codigo,
+
+                        row[
+                            idx["NOME_ESCOLA"]
+                        ] || "",
+
+                        cnpj,
+
+                        row[
+                            idx["ENDERECO"]
+                        ] || "",
+
+                        row[
+                            idx["COMPLEMENTO"]
+                        ] || "",
+
+                        row[
+                            idx["BAIRRO"]
+                        ] || "",
+
+                        row[
+                            idx["NOME_MUNICIPIO"]
+                        ] || "",
+
+                        row[
+                            idx["ESTADO"]
+                        ] || "",
+
+                        row[
+                            idx["CODIGO_AGRUPAMENTO"]
+                        ] || "",
+
+                        row[
+                            idx["NOME_AGRUPAMENTO"]
+                        ] || "",
+
+                        row[
+                            idx["TIPO_AGRUPAMENTO"]
+                        ] || "",
+
+                        "",
+
+                        "360",
+
+                        "0",
+
+                        "0",
+
+                        "1",
+
+                        "0"
+
+                    ]
+                    .map(escaparCSV)
+                    .join(";")
+
+                );
+
+
+                /*
+                 * ==================================================
+                 * ID PESSOA JURÍDICA
+                 * ==================================================
+                 */
 
                 const idPessoa =
-                    row[idx["ID_PESSOA_JURIDICA"]];
+                    String(
+
+                        row[
+                            idx["ID_PESSOA_JURIDICA"]
+                        ] || ""
+
+                    ).trim();
+
+
+                if(!idPessoa){
+
+                    throw new Error(
+
+                        "Linha " +
+                        numeroLinha +
+                        ": ID_PESSOA_JURIDICA não informado."
+
+                    );
+
+                }
+
+
+                /*
+                 * ==================================================
+                 * SEGMENTOS
+                 * ==================================================
+                 */
+
+                const segmentosValor =
+                    row[
+                        idx[segmentoColuna]
+                    ] || "";
+
 
                 const segmentos =
-                    row[idx[segmentoColuna]]
+                    segmentosValor
                     .split("|")
-                    .map(x => x.trim());
+                    .map(
+                        x => x.trim()
+                    )
+                    .filter(
+                        x => x !== ""
+                    );
 
-                const controle = new Set();
 
-                segmentos.forEach(seg=>{
+                if(segmentos.length === 0){
 
-                    const niveis = MAPEAMENTO[seg];
+                    throw new Error(
+
+                        "Linha " +
+                        numeroLinha +
+                        ": nenhum segmento informado para o ClickSaber."
+
+                    );
+
+                }
+
+
+                /*
+                 * ==================================================
+                 * EXPANSÃO DOS SEGMENTOS
+                 * ==================================================
+                 */
+
+                segmentos.forEach(seg => {
+
+
+                    const niveis =
+                        MAPEAMENTO[seg];
+
+
+                    /*
+                     * Segmento desconhecido
+                     * interrompe o processamento.
+                     */
 
                     if(!niveis){
+
                         throw new Error(
-                            "Segmento desconhecido: " + seg
+
+                            "Linha " +
+                            numeroLinha +
+                            ": Segmento desconhecido: " +
+                            seg
+
                         );
+
                     }
 
-                    niveis.forEach(nivel=>{
 
-                        const chave =
-                            idPessoa + "_" + nivel;
+                    niveis.forEach(nivel => {
 
-                        if(controle.has(chave))
+
+                        /*
+                         * ==================================================
+                         * FILTRO DOS IDs EXCLUÍDOS
+                         * ==================================================
+                         */
+
+                        if(
+                            IDS_EXCLUIDOS.includes(nivel)
+                        ){
+
                             return;
 
-                        controle.add(chave);
+                        }
 
-                        personalizacao.push([
-                            "2026",
-                            idPessoa,
-                            nivel,
-                            "",
-                            "",
-                            "100",
-                            "6"
-                        ].join(";"));
+
+                        /*
+                         * ==================================================
+                         * CONTROLE DE DUPLICIDADE
+                         * ==================================================
+                         */
+
+                        const chave =
+                            idPessoa +
+                            "_" +
+                            nivel;
+
+
+                        if(
+                            personalizacoesGeradas.has(chave)
+                        ){
+
+                            return;
+
+                        }
+
+
+                        personalizacoesGeradas.add(chave);
+
+
+                        /*
+                         * ==================================================
+                         * GERA PERSONALIZAÇÃO
+                         * ==================================================
+                         */
+
+                        personalizacao.push(
+
+                            [
+
+                                "2026",
+
+                                idPessoa,
+
+                                nivel,
+
+                                "",
+
+                                "",
+
+                                "100",
+
+                                "6"
+
+                            ]
+                            .map(escaparCSV)
+                            .join(";")
+
+                        );
 
                     });
 
@@ -303,44 +1024,106 @@ function processar(){
 
             }
 
+
+            /*
+             * ==================================================
+             * CONVERTE PARA CSV
+             * ==================================================
+             */
+
             cadastroCSV =
                 cadastro.join("\n");
 
+
             personalizacaoCSV =
                 personalizacao.join("\n");
+
+
+            /*
+             * ==================================================
+             * HABILITA DOWNLOADS
+             * ==================================================
+             */
 
             document
                 .getElementById("downloads")
                 .style.display = "block";
 
+
+            /*
+             * ==================================================
+             * STATUS
+             * ==================================================
+             */
+
             status(
+
                 "<b>Processamento concluído</b><br>" +
-                "Escolas processadas: " + escolas + "<br>" +
-                "Linhas cadastro: " + (cadastro.length-1) + "<br>" +
-                "Linhas personalização: " + (personalizacao.length-1)
+
+                "Escolas processadas: " +
+                escolas +
+
+                "<br>" +
+
+                "Linhas cadastro: " +
+                (cadastro.length - 1) +
+
+                "<br>" +
+
+                "Linhas personalização: " +
+                (personalizacao.length - 1)
+
             );
 
         }
+
+
         catch(ex){
 
+            cadastroCSV = "";
+
+            personalizacaoCSV = "";
+
+
+            document
+                .getElementById("downloads")
+                .style.display = "none";
+
+
             status(
-                "<span style='color:red'>"+
-                ex.message+
+
+                "<span style='color:red'>" +
+
+                ex.message +
+
                 "</span>"
+
             );
 
         }
 
     };
 
+
+    /*
+     * A planilha recebida atualmente
+     * é tratada como ISO-8859-1.
+     */
+
     reader.readAsText(
+
         arquivo,
+
         "ISO-8859-1"
+
     );
 
 }
 
+
 </script>
 
 </body>
+
 </html>
+```
