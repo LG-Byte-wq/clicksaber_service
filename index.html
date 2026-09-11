@@ -5,73 +5,171 @@
 
 <meta charset="UTF-8">
 
-<title>ClickSaber - Stable v1.4</title>
+<title>ClickSaber - v1.5</title>
+
+<!-- Inclusão da biblioteca SheetJS -->
+<script src="xlsx.full.min.js"></script>
 
 <style>
 
+:root {
+    --bg: #f5f7fa;
+    --card-bg: #ffffff;
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --border-color: #e5e7eb;
+    --info-bg: #eef2ff;
+    --info-text: #1e1b4b;
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+body.dark-theme {
+    --bg: #0f172a;
+    --card-bg: #1e293b;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --border-color: #334155;
+    --info-bg: #1e1b4b;
+    --info-text: #e0e7ff;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
 body{
     font-family: Arial, sans-serif;
-    background:#f5f7fa;
-    padding:30px;
+    background: var(--bg);
+    color: var(--text-primary);
+    padding: 30px;
+    margin: 0;
+    transition: background 0.3s ease, color 0.3s ease;
+    min-height: 100vh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.theme-toggle-container {
+    max-width: 1000px;
+    margin: 0 auto 10px auto;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.theme-toggle {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+    background: var(--border-color);
 }
 
 .container{
-    max-width:1000px;
-    margin:auto;
-    background:white;
-    padding:30px;
-    border-radius:12px;
-    box-shadow:0 2px 10px rgba(0,0,0,0.15);
+    max-width: 1000px;
+    margin: 0 auto;
+    background: var(--card-bg);
+    padding: 40px 30px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+    flex: 1;
 }
 
 h1{
-    color:#1f2937;
+    color: var(--text-primary);
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 25px;
+    font-size: 2.2rem;
+    letter-spacing: -0.5px;
+}
+
+p{
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+}
+
+input[type="file"] {
+    background: var(--bg);
+    color: var(--text-primary);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px dashed var(--border-color);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 button{
-    padding:12px 20px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    color:white;
-    font-weight:bold;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+    transition: opacity 0.2s ease;
+}
+
+button:hover {
+    opacity: 0.9;
 }
 
 .processar{
-    background:#2563eb;
+    background: #2563eb;
+    font-size: 1rem;
 }
 
 .download{
-    background:#059669;
+    background: #059669;
 }
 
 .download2{
-    background:#7c3aed;
+    background: #7c3aed;
 }
 
 .info{
-    margin-top:20px;
-    padding:15px;
-    background:#eef2ff;
-    border-radius:8px;
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--info-bg);
+    color: var(--info-text);
+    border-radius: 8px;
+    border-left: 4px solid #2563eb;
 }
 
 .erro{
-    background:#fee2e2;
-    color:#991b1b;
+    background: #fee2e2;
+    color: #991b1b;
+    border-left-color: #dc2626;
 }
 
 .sucesso{
-    background:#dcfce7;
-    color:#166534;
+    background: #dcfce7;
+    color: #166534;
+    border-left-color: #16a34a;
 }
 
 .botoes{
-    margin-top:20px;
+    margin-top: 20px;
 }
 
 .botoes button{
-    margin-right:10px;
+    margin-right: 10px;
+}
+
+footer {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 15px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
 }
 
 </style>
@@ -80,18 +178,36 @@ button{
 
 <body>
 
+<div class="theme-toggle-container">
+
+    <button
+        class="theme-toggle"
+        onclick="alternarTema()"
+    >
+
+        <span id="theme-icon">🌙</span>
+
+        <span id="theme-text">
+            Modo Escuro
+        </span>
+
+    </button>
+
+</div>
+
+
 <div class="container">
 
-    <h1>ClickSaber - Stable v1.4</h1>
+    <h1>ClickSaber</h1>
 
     <p>
-        Selecione o CSV recebido pelo time.
+        Selecione o arquivo <b>CSV</b> ou <b>XLSX</b> recebido pelo time.
     </p>
 
     <input
         type="file"
         id="arquivo"
-        accept=".csv"
+        accept=".csv,.xlsx,.xls"
     >
 
     <br><br>
@@ -134,6 +250,11 @@ button{
 </div>
 
 
+<footer>
+    Versão - v1.5
+</footer>
+
+
 <script>
 
 
@@ -146,6 +267,46 @@ button{
 let cadastroCSV = "";
 
 let personalizacaoCSV = "";
+
+
+/*
+ * ==========================================================
+ * CONTROLE DE TEMA
+ * ==========================================================
+ */
+
+function alternarTema() {
+
+    const body =
+        document.body;
+
+    const icon =
+        document.getElementById("theme-icon");
+
+    const text =
+        document.getElementById("theme-text");
+
+
+    body.classList.toggle("dark-theme");
+
+
+    if (
+        body.classList.contains("dark-theme")
+    ) {
+
+        icon.textContent = "☀️";
+
+        text.textContent = "Modo Claro";
+
+    } else {
+
+        icon.textContent = "🌙";
+
+        text.textContent = "Modo Escuro";
+
+    }
+
+}
 
 
 /*
@@ -190,7 +351,7 @@ const MAPEAMENTO = {
 
 /*
  * ==========================================================
- * NÍVEIS DE ENSINO EXCLUÍDOS
+ * IDS QUE NÃO PODEM SER GERADOS
  * ==========================================================
  */
 
@@ -212,11 +373,14 @@ const IDS_EXCLUIDOS = [
 
 /*
  * ==========================================================
- * EXIBIÇÃO DE STATUS
+ * EXIBIÇÃO DO STATUS
  * ==========================================================
  */
 
-function status(msg, tipo = ""){
+function status(
+    msg,
+    tipo = ""
+){
 
     const div =
         document.getElementById("status");
@@ -233,24 +397,25 @@ function status(msg, tipo = ""){
 
 /*
  * ==========================================================
- * ESCAPAR VALORES CSV
+ * TRATAMENTO DE CSV
  * ==========================================================
  *
- * Não utiliza:
+ * Os dados são gravados como valores normais.
  *
- * ="valor"
+ * Não utilizamos:
+ *
+ * ="00095105000000"
  *
  * Nem:
  *
- * 'valor
- *
- * Os valores são gravados como dados normais.
+ * '00095105000000
  */
 
 function escaparCSV(valor){
 
     const texto =
         String(valor ?? "");
+
 
     if(
         texto.includes(";") ||
@@ -265,6 +430,7 @@ function escaparCSV(valor){
 
     }
 
+
     return texto;
 
 }
@@ -272,16 +438,16 @@ function escaparCSV(valor){
 
 /*
  * ==========================================================
- * NORMALIZAR CODIGO_ESCOLA E CNPJ
+ * NORMALIZAÇÃO DE CODIGO_ESCOLA E CNPJ
  * ==========================================================
  *
  * Regras:
  *
- * - Remove caracteres que não sejam números.
- * - Campo vazio gera erro.
- * - Mais de 14 dígitos gera erro.
- * - Menos de 14 dígitos recebe zeros à esquerda.
- * - Resultado final sempre possui exatamente 14 dígitos.
+ * 1. Remove caracteres que não sejam números.
+ * 2. Campo vazio gera erro.
+ * 3. Mais de 14 dígitos gera erro.
+ * 4. Menos de 14 dígitos recebe zeros à esquerda.
+ * 5. Resultado final possui exatamente 14 dígitos.
  */
 
 function normalizarDocumento(
@@ -290,25 +456,47 @@ function normalizarDocumento(
     linha
 ){
 
+    let valorOriginal =
+        String(valor ?? "")
+        .trim();
+
+
     /*
-     * Converte o valor para texto.
-     *
-     * O replace(".0") trata situações em que
-     * uma planilha tenha exportado o valor como:
-     *
-     * 95105000000.0
+     * Trata valores que possam ter vindo
+     * como número decimal do Excel.
      */
+
+    if(
+        valorOriginal.endsWith(".0")
+    ){
+
+        valorOriginal =
+            valorOriginal.slice(
+                0,
+                -2
+            );
+
+    }
+
+
+    /*
+     * Remove caracteres não numéricos.
+     */
+
     const somenteNumeros =
-        String(valor || "")
-        .replace(".0", "")
-        .replace(/\D/g, "");
+        valorOriginal.replace(
+            /\D/g,
+            ""
+        );
 
 
     /*
      * Campo vazio.
      */
 
-    if(!somenteNumeros){
+    if(
+        !somenteNumeros
+    ){
 
         throw new Error(
 
@@ -327,7 +515,9 @@ function normalizarDocumento(
      * Mais de 14 dígitos.
      */
 
-    if(somenteNumeros.length > 14){
+    if(
+        somenteNumeros.length > 14
+    ){
 
         throw new Error(
 
@@ -347,7 +537,7 @@ function normalizarDocumento(
 
 
     /*
-     * Completa com zeros à esquerda.
+     * Completa zeros à esquerda.
      */
 
     const normalizado =
@@ -361,7 +551,9 @@ function normalizarDocumento(
      * Validação final.
      */
 
-    if(normalizado.length !== 14){
+    if(
+        normalizado.length !== 14
+    ){
 
         throw new Error(
 
@@ -388,33 +580,49 @@ function normalizarDocumento(
  * ==========================================================
  */
 
-function baixar(nome, conteudo){
+function baixar(
+    nome,
+    conteudo
+){
 
-    const blob = new Blob(
+    const blob =
+        new Blob(
 
-        [conteudo],
+            [conteudo],
 
-        {
-            type:"text/csv;charset=ISO-8859-1"
-        }
+            {
+                type:
+                    "text/csv;charset=ISO-8859-1"
+            }
 
-    );
+        );
+
 
     const url =
         URL.createObjectURL(blob);
 
+
     const a =
         document.createElement("a");
+
 
     a.href = url;
 
     a.download = nome;
 
-    document.body.appendChild(a);
+
+    document
+        .body
+        .appendChild(a);
+
 
     a.click();
 
-    document.body.removeChild(a);
+
+    document
+        .body
+        .removeChild(a);
+
 
     URL.revokeObjectURL(url);
 
@@ -443,7 +651,7 @@ function baixarPersonalizacao(){
 
 /*
  * ==========================================================
- * PROCESSAMENTO PRINCIPAL
+ * PROCESSAMENTO
  * ==========================================================
  */
 
@@ -457,13 +665,14 @@ function processar(){
 
     personalizacaoCSV = "";
 
+
     document
         .getElementById("downloads")
         .style.display = "none";
 
 
     /*
-     * Verifica se foi selecionado um arquivo.
+     * Arquivo selecionado.
      */
 
     const arquivo =
@@ -475,9 +684,12 @@ function processar(){
     if(!arquivo){
 
         status(
+
             "<b>Erro:</b><br>" +
-            "Selecione um arquivo CSV.",
+            "Selecione um arquivo CSV ou XLSX.",
+
             "erro"
+
         );
 
         return;
@@ -485,35 +697,120 @@ function processar(){
     }
 
 
-    /*
-     * FileReader
-     */
-
     const reader =
         new FileReader();
 
 
-    reader.onload = function(e){
+    const ehExcel =
+        arquivo.name
+        .toLowerCase()
+        .endsWith(".xlsx") ||
+
+        arquivo.name
+        .toLowerCase()
+        .endsWith(".xls");
+
+
+    reader.onload =
+        function(e){
 
         try{
 
-            const texto =
-                e.target.result;
+            let linhas = [];
 
 
             /*
-             * Divide o arquivo em linhas.
+             * ==================================================
+             * LEITURA DO EXCEL
+             * ==================================================
              */
 
-            const linhas =
-                texto
-                .split(/\r?\n/)
-                .filter(
-                    x => x.trim() !== ""
-                );
+            if(ehExcel){
+
+                const workbook =
+                    XLSX.read(
+
+                        e.target.result,
+
+                        {
+                            type: "array"
+                        }
+
+                    );
 
 
-            if(linhas.length < 2){
+                const nomeAba =
+                    workbook
+                    .SheetNames
+                    .find(
+
+                        nome =>
+
+                            nome
+                            .toLowerCase()
+                            .includes(
+                                "escolas para inclusão"
+                            )
+
+                    ) ||
+
+                    workbook.SheetNames[0];
+
+
+                const worksheet =
+                    workbook.Sheets[nomeAba];
+
+
+                linhas =
+                    XLSX.utils.sheet_to_json(
+
+                        worksheet,
+
+                        {
+                            header: 1,
+                            raw: false,
+                            defval: ""
+                        }
+
+                    );
+
+            }
+
+
+            /*
+             * ==================================================
+             * LEITURA DO CSV
+             * ==================================================
+             */
+
+            else{
+
+                const texto =
+                    e.target.result;
+
+
+                linhas =
+                    texto
+                    .split(/\r?\n/)
+                    .filter(
+                        x => x.trim() !== ""
+                    )
+                    .map(
+                        x => x.split(";")
+                    );
+
+            }
+
+
+            /*
+             * ==================================================
+             * VALIDAÇÃO DO ARQUIVO
+             * ==================================================
+             */
+
+            if(
+                linhas.length < 2
+            ){
 
                 throw new Error(
 
@@ -532,28 +829,33 @@ function processar(){
 
             const header =
                 linhas[0]
-                .split(";")
-                .map(x =>
+                .map(
 
-                    x
-                    .replaceAll('"',"")
-                    .trim()
+                    x =>
+
+                        String(x || "")
+                        .replaceAll('"',"")
+                        .trim()
 
                 );
 
 
             /*
-             * Índice das colunas.
+             * ==================================================
+             * ÍNDICE DAS COLUNAS
+             * ==================================================
              */
 
             const idx = {};
 
 
-            header.forEach((col,i)=>{
+            header.forEach(
+                (col, i) => {
 
-                idx[col] = i;
+                    idx[col] = i;
 
-            });
+                }
+            );
 
 
             /*
@@ -565,8 +867,13 @@ function processar(){
             const segmentoColuna =
                 Object.keys(idx)
                 .find(
+
                     x =>
-                        x.includes("ClickSaber")
+
+                        x
+                        .toLowerCase()
+                        .includes("clicksaber")
+
                 );
 
 
@@ -583,7 +890,7 @@ function processar(){
 
             /*
              * ==================================================
-             * VALIDAR COLUNAS OBRIGATÓRIAS
+             * COLUNAS OBRIGATÓRIAS
              * ==================================================
              */
 
@@ -609,12 +916,15 @@ function processar(){
                 colunasObrigatorias.filter(
 
                     coluna =>
+
                         idx[coluna] === undefined
 
                 );
 
 
-            if(colunasAusentes.length > 0){
+            if(
+                colunasAusentes.length > 0
+            ){
 
                 throw new Error(
 
@@ -703,21 +1013,14 @@ function processar(){
 
             let escolas = 0;
 
+
             let linhasPersonalizacao = 0;
 
 
             /*
              * ==================================================
-             * CONTROLE GLOBAL DE DUPLICIDADE
+             * CONTROLE DE DUPLICIDADE
              * ==================================================
-             *
-             * Uma combinação de:
-             *
-             * ID_PESSOA_JURIDICA
-             * +
-             * idNivelEnsinoIndicacao
-             *
-             * só pode aparecer uma vez.
              */
 
             const personalizacoesGeradas =
@@ -726,7 +1029,7 @@ function processar(){
 
             /*
              * ==================================================
-             * PROCESSAR ESCOLAS
+             * PROCESSAR CADA ESCOLA
              * ==================================================
              */
 
@@ -737,7 +1040,7 @@ function processar(){
             ){
 
                 const row =
-                    linhas[i].split(";");
+                    linhas[i];
 
 
                 const numeroLinha =
@@ -745,13 +1048,34 @@ function processar(){
 
 
                 /*
-                 * Não ignora linhas com problema.
+                 * Linha vazia.
                  *
-                 * Apenas verifica se a quantidade
-                 * de colunas é suficiente.
+                 * Pode ser ignorada.
                  */
 
-                if(row.length < header.length){
+                if(
+                    !row ||
+                    row.every(
+                        valor =>
+                            String(
+                                valor ?? ""
+                            ).trim() === ""
+                    )
+                ){
+
+                    continue;
+
+                }
+
+
+                /*
+                 * Validação da quantidade
+                 * de colunas.
+                 */
+
+                if(
+                    row.length < header.length
+                ){
 
                     throw new Error(
 
@@ -846,7 +1170,9 @@ function processar(){
 
 
                 const segmentos =
-                    segmentosValor
+                    String(
+                        segmentosValor
+                    )
                     .split("|")
                     .map(
                         x => x.trim()
@@ -856,7 +1182,9 @@ function processar(){
                     );
 
 
-                if(segmentos.length === 0){
+                if(
+                    segmentos.length === 0
+                ){
 
                     throw new Error(
 
@@ -880,9 +1208,7 @@ function processar(){
                     [
 
                         /*
-                         * CODIGO_ESCOLA
-                         *
-                         * Já está normalizado com 14 dígitos.
+                         * Código já normalizado.
                          */
 
                         codigo,
@@ -894,9 +1220,7 @@ function processar(){
 
 
                         /*
-                         * CNPJ
-                         *
-                         * Já está normalizado com 14 dígitos.
+                         * CNPJ já normalizado.
                          */
 
                         cnpj,
@@ -995,20 +1319,17 @@ function processar(){
 
                 /*
                  * ==================================================
-                 * EXPANDIR SEGMENTOS
+                 * EXPANSÃO DOS SEGMENTOS
                  * ==================================================
                  */
 
-                segmentos.forEach(seg => {
+                segmentos.forEach(
+                    seg => {
 
 
                     const niveis =
                         MAPEAMENTO[seg];
 
-
-                    /*
-                     * Segmento não cadastrado.
-                     */
 
                     if(!niveis){
 
@@ -1024,7 +1345,8 @@ function processar(){
                     }
 
 
-                    niveis.forEach(nivel => {
+                    niveis.forEach(
+                        nivel => {
 
 
                         /*
@@ -1034,7 +1356,9 @@ function processar(){
                          */
 
                         if(
-                            IDS_EXCLUIDOS.includes(nivel)
+                            IDS_EXCLUIDOS.includes(
+                                nivel
+                            )
                         ){
 
                             return;
@@ -1044,7 +1368,7 @@ function processar(){
 
                         /*
                          * ==================================================
-                         * DUPLICIDADE
+                         * CONTROLE DE DUPLICIDADE
                          * ==================================================
                          */
 
@@ -1055,7 +1379,9 @@ function processar(){
 
 
                         if(
-                            personalizacoesGeradas.has(chave)
+                            personalizacoesGeradas.has(
+                                chave
+                            )
                         ){
 
                             return;
@@ -1063,7 +1389,9 @@ function processar(){
                         }
 
 
-                        personalizacoesGeradas.add(chave);
+                        personalizacoesGeradas.add(
+                            chave
+                        );
 
 
                         /*
@@ -1142,7 +1470,7 @@ function processar(){
 
             /*
              * ==================================================
-             * CONVERTER PARA CSV
+             * GERA OS CSVs
              * ==================================================
              */
 
@@ -1156,7 +1484,7 @@ function processar(){
 
             /*
              * ==================================================
-             * MOSTRAR DOWNLOADS
+             * LIBERA DOWNLOADS
              * ==================================================
              */
 
@@ -1202,10 +1530,7 @@ function processar(){
              * ERRO
              * ==================================================
              *
-             * Importante:
-             *
-             * Se qualquer linha tiver problema,
-             * os arquivos são descartados.
+             * Descarta qualquer resultado parcial.
              */
 
             cadastroCSV = "";
@@ -1241,18 +1566,22 @@ function processar(){
      * ==========================================================
      * LEITURA DO ARQUIVO
      * ==========================================================
-     *
-     * ISO-8859-1 é utilizado para preservar
-     * caracteres acentuados das planilhas.
      */
 
-    reader.readAsText(
+    if(ehExcel){
 
-        arquivo,
+        reader.readAsArrayBuffer(
+            arquivo
+        );
 
-        "ISO-8859-1"
+    } else {
 
-    );
+        reader.readAsText(
+            arquivo,
+            "ISO-8859-1"
+        );
+
+    }
 
 }
 
